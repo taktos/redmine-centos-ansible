@@ -1,12 +1,13 @@
-- name: Redmineのソースコードをチェックアウト
+- file: path={{ redmine_dir }} owner={{ redmine_user }} group={{ redmine_group }} state=directory
   sudo: yes
+
+- name: Redmineのソースコードをチェックアウト
   git:
     repo={{ redmine_git_url }}
     dest={{ redmine_dir }}
     version={{ redmine_version }}
 
 - name: database.ymlの作成
-  sudo: yes
   template:
     src=database.yml
     dest={{ redmine_dir }}/config/database.yml
@@ -15,7 +16,6 @@
     result_database_yml
 
 - name: configuration.ymlの作成
-  sudo: yes
   template:
     src=configuration.yml
     dest={{ redmine_dir }}/config/configuration.yml
@@ -30,95 +30,75 @@
   changed_when: false
 
 - name: gemsパッケージのインストール
-  sudo: yes
   command:
-    bundle install --path vendor/bundle
+    ~/.rbenv/shims/bundle install --path vendor/bundle
     chdir={{ redmine_dir }}
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
   when:
     result_test_gemfile.rc == 1
 
 - name: gemsパッケージのアップデート
-  sudo: yes
   command:
-    bundle update
+    ~/.rbenv/shims/bundle update
     chdir={{ redmine_dir }}
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
   when:
     result_test_gemfile.rc == 0
 
 - name: secret tokenの作成
-  sudo: yes
   command:
-    bundle exec rake generate_secret_token
+    ~/.rbenv/shims/bundle exec rake generate_secret_token
     chdir={{ redmine_dir }}
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
 
 - name: データベースのマイグレーション
-  sudo: yes
   command:
-    bundle exec rake db:migrate
+    ~/.rbenv/shims/bundle exec rake db:migrate
     chdir={{ redmine_dir }}
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
 
 - name: デフォルトデータ(日本語)をロード
-  sudo: yes
   command:
-    bundle exec rake redmine:load_default_data
+    ~/.rbenv/shims/bundle exec rake redmine:load_default_data
     chdir={{ redmine_dir }}
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
     REDMINE_LANG: ja
   when:
     result_database_yml|changed
 
 - name: デフォルトの言語を日本語に変更
-  sudo: yes
   command:
-    bundle exec rails r 'Setting["default_language"]="ja"'
+    ~/.rbenv/shims/bundle exec rails r 'Setting["default_language"]="ja"'
     chdir={{ redmine_dir }}
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
     result_database_yml|changed
 
 - name: ユーザー名の表示形式を「姓 名」に変更
-  sudo: yes
   command:
-    bundle exec rails r 'Setting["user_format"]=:lastname_firstname'
+    ~/.rbenv/shims/bundle exec rails r 'Setting["user_format"]=:lastname_firstname'
     chdir={{ redmine_dir }}
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
     result_database_yml|changed
 
 - name: 添付ファイルとリポジトリのエンコーディングを設定
-  sudo: yes
   command:
-    bundle exec rails r 'Setting["repositories_encodings"]="UTF-8,CP932,EUC-JP"'
+    ~/.rbenv/shims/bundle exec rails r 'Setting["repositories_encodings"]="UTF-8,CP932,EUC-JP"'
     chdir={{ redmine_dir }}
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
     result_database_yml|changed
 
 - name: 添付ファイルのサムネイルを表示
-  sudo: yes
   command:
-    bundle exec rails r 'Setting["thumbnails_enabled"]="1"'
+    ~/.rbenv/shims/bundle exec rails r 'Setting["thumbnails_enabled"]="1"'
     chdir={{ redmine_dir }}
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
     RAILS_ENV: production
   when:
     result_database_yml|changed

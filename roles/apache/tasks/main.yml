@@ -1,47 +1,31 @@
 - name: Redmineディレクトリ以下のオーナーを変更
   sudo: yes
   command:
-    chown -R {{ redmine_dir_owner }} {{ redmine_dir }}
-
-- name: Passengerがインストールされているか確認
-  command:
-    test -f /usr/local/bin/passenger-install-apache2-module
-  register:
-    result
-  failed_when: result.rc not in [0, 1]
-  changed_when: false
+    chown -R {{ redmine_user }}:{{ redmine_group }} {{ redmine_dir }}
 
 - name: Passengerをインストール
-  sudo: yes
-  gem:
-    name=passenger
-    user_install=no
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
-  when: result.rc == 1
+  gem: name=passenger state=present executable=~/.rbenv/shims/gem user_install=no
+  register: passenger_gem_result
 
 - name: PassengerのApache用モジュールのインストール
-  sudo: yes
   command:
-    passenger-install-apache2-module --auto
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
-  when: result.rc == 1
+    ~/.rbenv/shims/passenger-install-apache2-module -a --languages 'ruby'
+  when: passenger_gem_result|changed
 
 - name: PassengerのApache用モジュールの設定を取得
   command:
-    passenger-install-apache2-module --snippet
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+    ~/.rbenv/shims/passenger-install-apache2-module --snippet
   register:
     passenger_snippet_vars
-  changed_when: false
+  when: passenger_gem_result|changed
 
 - name: redmine.confの作成
   sudo: yes
   template:
     src=redmine.conf
     dest=/etc/httpd/conf.d/redmine.conf
+  when: passenger_gem_result|changed
+  notify: restart httpd
 
 - name: Redmineに /redmine でアクセスするためのシンボリックリンク作成
   sudo: yes
@@ -50,9 +34,3 @@
     src={{ redmine_dir }}/public
     dest=/var/www/html/redmine
 
-- name: httpdの再起動
-  sudo: yes
-  service:
-    name=httpd
-    state=restarted
-    enabled=yes

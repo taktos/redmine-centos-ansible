@@ -1,0 +1,13 @@
+---
+- name: Install rbenv
+  git: repo=https://github.com/rbenv/rbenv.git dest=~/.rbenv version={{ ruby_rbenv_version }} accept_hostkey=yes
+
+- name: Install ruby-build
+  git: repo=https://github.com/rbenv/ruby-build.git dest=~/.rbenv/plugins/ruby-build accept_hostkey=yes
+
+- name: Install rbenv-gem-rehash
+  git: repo=https://github.com/rbenv/rbenv-gem-rehash.git dest=~/.rbenv/plugins/rbenv-gem-rehash accept_hostkey=yes
+
+- lineinfile: dest=~/.bash_profile line="PATH=$HOME/.rbenv/bin:$PATH" insertafter="PATH=\$PATH:\$HOME" state=present
+
+- lineinfile: dest=~/.bash_profile insertafter="^export PATH" line='eval "$(rbenv init -)"' state=present

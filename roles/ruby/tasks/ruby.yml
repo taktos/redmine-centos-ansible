@@ -1,0 +1,12 @@
+---
+- name: Install ruby version
+  shell: CONFIGURE_OPTS="--disable-install-rdoc" ~/.rbenv/bin/rbenv install -s {{ ruby_version }}
+
+- name: Enable ruby version globally
+  shell: ~/.rbenv/bin/rbenv global {{ ruby_version }}
+
+- name: .gemrc
+  copy: src=gemrc dest=~/.gemrc mode=0644
+
+- name: Install bundler
+  gem: name=bundler executable=~/.rbenv/shims/gem user_install=false
