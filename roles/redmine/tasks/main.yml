@@ -78,23 +78,6 @@
   when:
     result_database_yml|changed
 
-- name: farend_basicテーマのダウンロード
-  sudo: yes
-  git:
-    repo=https://github.com/farend/redmine_theme_farend_basic.git
-    dest={{ redmine_dir }}/public/themes/farend_basic
-
-- name: テーマをfarend_basicに切り替え
-  sudo: yes
-  command:
-    bundle exec rails r 'Setting["ui_theme"]="farend_basic"'
-    chdir={{ redmine_dir }}
-  environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
-    RAILS_ENV: production
-  when:
-    result_database_yml|changed
-
 - name: デフォルトの言語を日本語に変更
   sudo: yes
   command:
@@ -138,3 +121,4 @@
     RAILS_ENV: production
   when:
     result_database_yml|changed
+
